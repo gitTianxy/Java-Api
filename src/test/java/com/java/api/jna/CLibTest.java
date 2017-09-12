@@ -1,4 +1,4 @@
-package jna;
+package com.java.api.jna;
 
 import com.java.api.jna.CLibrary;
 import org.junit.Test;
