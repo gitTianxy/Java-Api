@@ -7,7 +7,6 @@ import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.mashape.unirest.request.GetRequest;
 import com.mashape.unirest.request.HttpRequestWithBody;
-import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -109,8 +108,7 @@ public class UnirestDemo {
      * @return
      * @throws UnirestException
      */
-    static HttpResponse<JsonNode> doDelete(String url, Map<String, String> headers, Map<String, String> rtParams)
-            throws UnirestException {
+    static HttpResponse doDelete(String url, Map<String, String> headers, Map<String, String> rtParams) throws UnirestException {
         HttpRequestWithBody request = Unirest.delete(url);
         if (headers != null) {
             request.headers(headers);
@@ -120,45 +118,47 @@ public class UnirestDemo {
                 request.routeParam(entry.getKey(), entry.getValue());
             }
         }
-        return request.asJson();
+        return request.asString();
     }
 
 
     public static void main(String[] args) throws Exception {
+        // params
+        String url;
+        Map<String, String> headers;
+        Map<String, String> rtParams;
+        HttpResponse<JsonNode> response;
         // get
-        String url = "http://localhost:8088/rest/jpa_entity/{id}";
-        Map<String, String> headers = new HashMap<>();
+        url = "http://localhost:8088/rest/jpa_entity/{id}";
+        headers = new HashMap<>();
         headers.put("Content-Type", "application/json");
-        Map<String, String> rtParams = new HashMap<>();
+        rtParams = new HashMap<>();
         rtParams.put("id", "10");
-        HttpResponse<JsonNode> response = doGet(url, headers, rtParams, null);
-        int status = response.getStatus();
-        JSONObject body = response.getBody().getObject();
-        System.out.println(String.format("GET succ. status:%s, body:%s", status, body));
+        response = doGet(url, headers, rtParams, null);
+        System.out.println(String.format("GET succ. status:%s, body:%s", response.getStatus(), response.getBody()));
         // post
         url = "http://localhost:8088/rest/jpa_entity";
         Map<String, Object> bdParams = new HashMap<>();
         bdParams.put("fieldA", "urirest-test fA");
         bdParams.put("fieldB", "urirest-test fB");
         response = doPost(url, headers, null, bdParams);
-        System.out.println(String.format("POST succ. status:%s, body:%s", response.getStatus(), response.getBody()
-                .getObject()));
+        System.out.println(String.format("POST succ. status:%s, body:%s", response.getStatus(), response.getBody()));
         // put
         url = "http://localhost:8088/rest/jpa_entity/{id}";
         rtParams = new HashMap<>();
-        rtParams.put("id", "12");
+        rtParams.put("id", "13");
         bdParams = new HashMap<>();
         bdParams.put("fieldA", "urirest-test fA NEW");
         bdParams.put("fieldB", "urirest-test fB NEW");
         response = doPut(url, headers, rtParams, bdParams);
-        System.out.println(String.format("PUT succ. status:%s, body:%s", response.getStatus(), response.getBody()
-                .getObject()));
+        System.out.println(String.format("PUT succ. status:%s, body:%s", response.getStatus(), response.getBody()));
         // delete
         url = "http://localhost:8088/rest/jpa_entity/{id}";
+        headers = new HashMap<>();
+        headers.put("Content-Type", "application/json");
         rtParams = new HashMap<>();
-        rtParams.put("id", "12");
+        rtParams.put("id", "13");
         response = doDelete(url, headers, rtParams);
-        System.out.println(String.format("DELETE succ. status:%s, body:%s", response.getStatus(), response.getBody()
-                .getObject()));
+        System.out.println(String.format("DELETE succ. status:%s, body:%s", response.getStatus(), response.getBody()));
     }
 }
