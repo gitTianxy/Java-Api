@@ -1,12 +1,12 @@
 package com.java.api.unirest;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.mashape.unirest.request.GetRequest;
 import com.mashape.unirest.request.HttpRequestWithBody;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.json.JSONObject;
 
 import java.io.IOException;
