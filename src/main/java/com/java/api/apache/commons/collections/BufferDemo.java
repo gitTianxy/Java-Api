@@ -1,4 +1,4 @@
-package com.java.apache.commons.collections;
+package com.java.api.apache.commons.collections;
 
 import org.apache.commons.collections.Buffer;
 import org.apache.commons.collections.BufferUtils;
