@@ -9,7 +9,6 @@ import com.mashape.unirest.request.GetRequest;
 import com.mashape.unirest.request.HttpRequestWithBody;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -121,44 +120,4 @@ public class UnirestDemo {
         return request.asString();
     }
 
-
-    public static void main(String[] args) throws Exception {
-        // params
-        String url;
-        Map<String, String> headers;
-        Map<String, String> rtParams;
-        HttpResponse<JsonNode> response;
-        // get
-        url = "http://localhost:8088/rest/jpa_entity/{id}";
-        headers = new HashMap<>();
-        headers.put("Content-Type", "application/json");
-        rtParams = new HashMap<>();
-        rtParams.put("id", "10");
-        response = doGet(url, headers, rtParams, null);
-        System.out.println(String.format("GET succ. status:%s, body:%s", response.getStatus(), response.getBody()));
-        // post
-        url = "http://localhost:8088/rest/jpa_entity";
-        Map<String, Object> bdParams = new HashMap<>();
-        bdParams.put("fieldA", "urirest-test fA");
-        bdParams.put("fieldB", "urirest-test fB");
-        response = doPost(url, headers, null, bdParams);
-        System.out.println(String.format("POST succ. status:%s, body:%s", response.getStatus(), response.getBody()));
-        // put
-        url = "http://localhost:8088/rest/jpa_entity/{id}";
-        rtParams = new HashMap<>();
-        rtParams.put("id", "13");
-        bdParams = new HashMap<>();
-        bdParams.put("fieldA", "urirest-test fA NEW");
-        bdParams.put("fieldB", "urirest-test fB NEW");
-        response = doPut(url, headers, rtParams, bdParams);
-        System.out.println(String.format("PUT succ. status:%s, body:%s", response.getStatus(), response.getBody()));
-        // delete
-        url = "http://localhost:8088/rest/jpa_entity/{id}";
-        headers = new HashMap<>();
-        headers.put("Content-Type", "application/json");
-        rtParams = new HashMap<>();
-        rtParams.put("id", "13");
-        response = doDelete(url, headers, rtParams);
-        System.out.println(String.format("DELETE succ. status:%s, body:%s", response.getStatus(), response.getBody()));
-    }
 }

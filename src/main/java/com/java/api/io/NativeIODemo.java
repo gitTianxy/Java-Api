@@ -1,19 +1,22 @@
 package com.java.api.io;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.util.Iterator;
-import java.util.Set;
+import java.nio.charset.Charset;
+import java.nio.file.*;
+import java.nio.file.attribute.FileAttribute;
+import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.stream.Stream;
 
 /**
  * Created by kevintian on 2017/9/27.
@@ -39,9 +42,64 @@ public class NativeIODemo {
      * 2. Paths
      */
     void nioApi() throws Exception {
-        channelDemo();
+        /*channelDemo();
         bufferDemo();
-        selectorDemo();
+        selectorDemo();*/
+        filesDemo();
+    }
+
+    /**
+     * CONTENT: 1-7
+     */
+    void filesDemo() throws IOException {
+        final String ROOT = "/Users/kevin/Desktop/io_test";
+        Path path = Paths.get(ROOT, "test.txt");
+        // 1. create file
+        if (!Files.exists(path)) {
+            System.out.println("file not exists");
+            Path parent = path.getParent();
+            if (!Files.exists(parent)) {
+                Files.createDirectory(parent);
+            }
+            Files.createFile(path);
+        }
+        // 2. write
+        try (BufferedWriter writer = Files.newBufferedWriter(path)) {
+            for (int i=0; i<100; i++) {
+                writer.write(String.format("第%s行: %s\n", i, String.valueOf(Math.random())));
+            }
+            writer.flush();
+        }
+        // 3. read
+        Files.lines(path, Charset.forName("utf-8")).forEach(line -> System.out.println(line));
+        // 4. copy
+        Path cp = Paths.get(ROOT, "test_cp.txt");
+        Files.copy(path, cp, StandardCopyOption.REPLACE_EXISTING);
+        // 5. move
+        Path target = Paths.get(ROOT, "test_mv.txt");
+        Files.move(path, target, StandardCopyOption.ATOMIC_MOVE);
+        // 6. delete
+        Path toDel = Files.copy(cp, Paths.get(ROOT, "test_redundant.txt"));
+        boolean isDel = Files.deleteIfExists(toDel);
+        System.out.println("is deleted: " + isDel);
+        // 1b. create tempt file
+        Files.list(path.getParent()).forEach(oldTmp -> {
+            if (oldTmp.getFileName().toString().contains("tmp")) {
+                try {
+                    System.out.println("delete old tmp:" + oldTmp.getFileName());
+                    Files.delete(oldTmp);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        Path tmp = Files.createTempFile(path.getParent(), "tmp", ".txt");
+        try (BufferedWriter writer = Files.newBufferedWriter(tmp)) {
+            writer.write("this is a tempt file");
+            writer.flush();
+        }
+        // 7. list files
+        Files.walk(path.getParent(), 1).forEach(p -> System.out.println(p.toString()));
     }
 
     /**
@@ -76,6 +134,7 @@ public class NativeIODemo {
      *      2) transferTo(): write data to other channel
      *      3) postion(): operate position in the related file
      *      4) size(): size of the related file
+     *      5) lock(): get 'FileLock' as multiple program trying to operate on a same file
      * CONSTRUCTION: from InputStream, OutputStream, RandomAccessFile
      * @throws IOException
      */
@@ -101,11 +160,11 @@ public class NativeIODemo {
         inChannel.close();
 
         // write
-        File output = new File(TEST_ROOT + "out.md");
-        if (!output.exists()) {
-            Files.createFile(output.toPath());
+        Path path = Paths.get(TEST_ROOT + "out.md");
+        if (!Files.exists(path)) {
+            Files.createFile(path);
         }
-        FileChannel outChannel = FileChannel.open(Paths.get(TEST_ROOT + "out.md"), StandardOpenOption.WRITE);
+        FileChannel outChannel = FileChannel.open(path, StandardOpenOption.WRITE);
 //        outChannel.position(outChannel.size()); // append
         ByteBuffer buf1 = ByteBuffer.allocate(48);
         buf1.clear();
@@ -117,7 +176,7 @@ public class NativeIODemo {
         long fileSize = outChannel.size();
         long position = outChannel.position();
         System.out.println(String.format("fileSize:%s, position:%s", fileSize, position));
-//        outChannel.position(0); // overrite
+//        outChannel.position(0); // overwrite
         buf1.clear();
         buf1.put("\nAnother line".getBytes());
         buf1.flip();
@@ -222,13 +281,57 @@ public class NativeIODemo {
      * @throws IOException
      */
     void socketIo() throws IOException {
-        if (true) {
-            return;
-        }
-        URL url = new URL("...");
-        URLConnection connection = url.openConnection();
+        URLInput();
+        URLOutput();
+    }
 
+    /**
+     * do GET
+     * @throws IOException
+     */
+    private void URLInput() throws IOException {
+        URL url = new URL("https://www.baidu.com");
+        URLConnection connection = url.openConnection();
         InputStream in = connection.getInputStream();
-        OutputStream out = connection.getOutputStream();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+            String content = reader.readLine();
+            while (content != null) {
+                System.out.println(content);
+                content = reader.readLine();
+            }
+        }
+        Map<String, List<String>> headers = connection.getHeaderFields();
+        for (Map.Entry<String, List<String>> hd : headers.entrySet()) {
+            System.out.println(String.format("head: key=%s, value=%s", hd.getKey(), hd.getValue()));
+        }
+    }
+
+    /**
+     * do POST: use HttpURLConnection
+     *
+     * @throws IOException
+     */
+    private void URLOutput() throws IOException {
+        URL target = new URL("http://localhost:8088/rest/jpa_entity");
+        HttpURLConnection httpConn = (HttpURLConnection) target.openConnection();
+        httpConn.setDoOutput(true);
+        httpConn.setRequestMethod("POST");
+        httpConn.setRequestProperty("Content-Type", "application/json");
+        httpConn.setRequestProperty("Accept-Charset", "utf-8");
+        Map<String, Object> bdParams = new HashMap<>();
+        bdParams.put("fieldA", "urirest-test fA");
+        bdParams.put("fieldB", "urirest-test fB");
+        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(httpConn.getOutputStream()))) {
+            writer.write(new ObjectMapper().writeValueAsString(bdParams));
+            writer.flush();
+        }
+        System.out.println("status: "+ httpConn.getResponseCode());
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(httpConn.getInputStream()))) {
+            String response = reader.readLine();
+            while (response != null) {
+                System.out.println(String.format(response));
+                response = reader.readLine();
+            }
+        }
     }
 }
