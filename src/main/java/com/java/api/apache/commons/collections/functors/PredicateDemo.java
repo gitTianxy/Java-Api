@@ -1,6 +1,6 @@
-package com.java.apache.commons.collections.functors;
+package com.java.api.apache.commons.collections.functors;
 
-import com.java.apache.commons.collections.Book;
+import com.java.api.apache.commons.collections.Book;
 import org.apache.commons.collections.Predicate;
 import org.apache.commons.collections.PredicateUtils;
 import org.apache.commons.collections.functors.InstanceofPredicate;

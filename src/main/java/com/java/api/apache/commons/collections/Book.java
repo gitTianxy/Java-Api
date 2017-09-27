@@ -1,4 +1,4 @@
-package com.java.apache.commons.collections;
+package com.java.api.apache.commons.collections;
 
 import lombok.Data;
 import org.apache.commons.lang3.builder.CompareToBuilder;

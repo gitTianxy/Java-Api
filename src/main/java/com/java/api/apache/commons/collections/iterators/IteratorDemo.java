@@ -1,6 +1,6 @@
-package com.java.apache.commons.collections.iterators;
+package com.java.api.apache.commons.collections.iterators;
 
-import com.java.apache.commons.collections.Book;
+import com.java.api.apache.commons.collections.Book;
 import org.apache.commons.collections.Predicate;
 import org.apache.commons.collections.iterators.ArrayListIterator;
 import org.apache.commons.collections.iterators.FilterIterator;
