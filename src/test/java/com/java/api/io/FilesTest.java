@@ -1,6 +1,7 @@
 package com.java.api.io;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.*;
@@ -14,6 +15,12 @@ import java.util.List;
 import java.util.Map;
 
 public class FilesTest {
+    String ROOT;
+
+    @Before
+    public void before() {
+        ROOT = System.getProperty("user.home") + "/Desktop/io_test";
+    }
 
     @Test
     public void testFiles() throws IOException {
@@ -29,6 +36,16 @@ public class FilesTest {
                 }
             }
         });
+    }
+
+    @Test
+    public void testPrintWriter() throws IOException {
+        Path root = Paths.get(ROOT);
+        Path tmp = Files.createTempFile(root, "tmp", ".txt");
+        try(PrintWriter printer = new PrintWriter(Files.newOutputStream(tmp))){
+            printer.write("this is a tempt file written by 'PrintWriter'");
+            printer.flush();
+        }
     }
 
     @Test
@@ -73,5 +90,11 @@ public class FilesTest {
                 response = reader.readLine();
             }
         }
+    }
+
+    @Test
+    public void testUserHome() {
+        String userHome = System.getProperty("user.home");
+        System.out.println(userHome);
     }
 }

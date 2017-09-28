@@ -5,30 +5,26 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.charset.Charset;
 import java.nio.file.*;
-import java.nio.file.attribute.FileAttribute;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.stream.Stream;
 
 /**
  * Created by kevintian on 2017/9/27.
  */
 public class NativeIODemo {
-    final String TEST_ROOT = "C:/Users/kevintian/Desktop/io_test/";
+    final String FILE_ROOT = System.getProperty("user.home") + "/Desktop/io_test/";
 
     public static void main(String[] args) throws Exception {
         NativeIODemo demo = new NativeIODemo();
         demo.ioApi();
         demo.nioApi();
-        demo.socketIo();
     }
 
     /**
@@ -42,9 +38,9 @@ public class NativeIODemo {
      * 2. Paths
      */
     void nioApi() throws Exception {
-        /*channelDemo();
+        channelDemo();
         bufferDemo();
-        selectorDemo();*/
+        selectorDemo();
         filesDemo();
     }
 
@@ -52,8 +48,7 @@ public class NativeIODemo {
      * CONTENT: 1-7
      */
     void filesDemo() throws IOException {
-        final String ROOT = "/Users/kevin/Desktop/io_test";
-        Path path = Paths.get(ROOT, "test.txt");
+        Path path = Paths.get(FILE_ROOT, "test.txt");
         // 1. create file
         if (!Files.exists(path)) {
             System.out.println("file not exists");
@@ -73,13 +68,13 @@ public class NativeIODemo {
         // 3. read
         Files.lines(path, Charset.forName("utf-8")).forEach(line -> System.out.println(line));
         // 4. copy
-        Path cp = Paths.get(ROOT, "test_cp.txt");
+        Path cp = Paths.get(FILE_ROOT, "test_cp.txt");
         Files.copy(path, cp, StandardCopyOption.REPLACE_EXISTING);
         // 5. move
-        Path target = Paths.get(ROOT, "test_mv.txt");
+        Path target = Paths.get(FILE_ROOT, "test_mv.txt");
         Files.move(path, target, StandardCopyOption.ATOMIC_MOVE);
         // 6. delete
-        Path toDel = Files.copy(cp, Paths.get(ROOT, "test_redundant.txt"));
+        Path toDel = Files.copy(cp, Paths.get(FILE_ROOT, "test_redundant.txt"));
         boolean isDel = Files.deleteIfExists(toDel);
         System.out.println("is deleted: " + isDel);
         // 1b. create tempt file
@@ -94,9 +89,9 @@ public class NativeIODemo {
             }
         });
         Path tmp = Files.createTempFile(path.getParent(), "tmp", ".txt");
-        try (BufferedWriter writer = Files.newBufferedWriter(tmp)) {
-            writer.write("this is a tempt file");
-            writer.flush();
+        try(PrintWriter printer = new PrintWriter(Files.newOutputStream(tmp))){
+            printer.write("this is a tempt file written by 'PrintWriter'");
+            printer.flush();
         }
         // 7. list files
         Files.walk(path.getParent(), 1).forEach(p -> System.out.println(p.toString()));
@@ -122,10 +117,7 @@ public class NativeIODemo {
      * @throws IOException
      */
     private void socketChannelDemo() throws IOException, InterruptedException {
-        System.out.println(StringUtils.center("socketChannelDemo", 100, "="));
-        Executor exec = Executors.newFixedThreadPool(2);
-        exec.execute(new NioSocketServer());
-        exec.execute(new NioSocketClient());
+        // refer to 'socketIO()'
     }
 
     /**
@@ -140,7 +132,7 @@ public class NativeIODemo {
      */
     private void fileChannelDemo() throws IOException {
         // read
-        RandomAccessFile aFile = new RandomAccessFile(TEST_ROOT + "elk学习测试.md", "r");
+        RandomAccessFile aFile = new RandomAccessFile(FILE_ROOT + "elk学习测试.md", "r");
         FileChannel inChannel = aFile.getChannel();
         ByteBuffer buf = ByteBuffer.allocate(64);
         int bytesRead = inChannel.read(buf);
@@ -160,7 +152,7 @@ public class NativeIODemo {
         inChannel.close();
 
         // write
-        Path path = Paths.get(TEST_ROOT + "out.md");
+        Path path = Paths.get(FILE_ROOT + "out.md");
         if (!Files.exists(path)) {
             Files.createFile(path);
         }
@@ -187,7 +179,7 @@ public class NativeIODemo {
     }
 
     /**
-     * 缓冲区本质上是一块可以写入数据，然后可以从中读取数据的内存。这块内存被包装成NIO Buffer对象，并提供了一组方法，用来方便的访问该块内存。
+     * 缓冲区本质上是一块供读/写数据的内存。这块内存被包装成NIO Buffer对象，并提供了一组方法，用来方便的访问该块内存。
      * PROPERTIES:
      * 1. capacity: 作为一个内存块，Buffer有一个固定的大小值，也叫“capacity”, 你只能往里写capacity个byte、long，char等类型。
      *      一旦Buffer满了，需要将其清空（通过读数据或者清除数据）才能继续写数据往里写数据。
@@ -201,7 +193,7 @@ public class NativeIODemo {
      * 5. compact(): 将剩余未读的数据规整到缓冲区头部
      */
     private void bufferDemo() throws IOException {
-
+        // refer to 'fileChannelDemo()'
     }
 
     /**
@@ -222,9 +214,8 @@ public class NativeIODemo {
      * 2. Selector使用完关闭: close()
      */
     private void selectorDemo() throws IOException {
-        if (true) {
-            return;
-        }
+        // refer to 'socketIO()'
+        /* template
         SelectableChannel channel = SocketChannel.open();
         Selector selector = Selector.open();
         channel.configureBlocking(false);
@@ -248,45 +239,41 @@ public class NativeIODemo {
                 keyIterator.remove();
             }
         }
+        */
     }
 
     /**
-     * TODO
+     * INPUT(3 LEVELS):
+     * 1. InputStream
+     * 2. Reader
+     * 3. children class of Reader, e.g. BufferedReader
+     *
+     * OUTPUT(3 LEVELS):
+     * 1. OutputStream
+     * 2. Writer
+     * 3. children class of Writer, e.g. BufferedWriter, PrintWriter(more powerful)
      *
      * @throws IOException
      */
     void ioApi() throws Exception {
-        if (true) {
-            return;
-        }
-        // step-01
-        InputStream inputStream = Files.newInputStream(Paths.get("..."));
-        // step-02
-        Reader reader = new InputStreamReader(inputStream);
-        // step-03
-        BufferedReader bufferedReader = new BufferedReader(reader);
-
-        // step-01
-        OutputStream outputStream = Files.newOutputStream(Paths.get("..."));
-        // step-02
-        Writer writer = new OutputStreamWriter(outputStream);
-        // step-03
-        BufferedWriter bufferedWriter = new BufferedWriter(writer);
-        PrintWriter printWriter = new PrintWriter(writer);
+        // refer to 'httpIO()'
     }
 
     /**
-     * TODO
+     * CONTENT:
+     * 1. input(do Get)
+     * 2. output(do POST)
      *
      * @throws IOException
      */
-    void socketIo() throws IOException {
+    void httpIO() throws IOException {
         URLInput();
         URLOutput();
     }
 
     /**
-     * do GET
+     * do GET: use the basic URLConnection
+     *
      * @throws IOException
      */
     private void URLInput() throws IOException {
@@ -333,5 +320,17 @@ public class NativeIODemo {
                 response = reader.readLine();
             }
         }
+    }
+
+    /**
+     * COMPONENT:
+     * 1. socket server
+     * 2. socket client
+     */
+    void socketIO() {
+        System.out.println(StringUtils.center("socketIO", 100, "="));
+        Executor exec = Executors.newFixedThreadPool(2);
+        exec.execute(new NioSocketServer());
+        exec.execute(new NioSocketClient());
     }
 }
